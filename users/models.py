@@ -14,17 +14,20 @@ ROLES_CHOICES = (
 )
 
 class CustomUser(AbstractUser):
-    pass
+    id = models.AutoField(primary_key=True)
+    username = models.CharField(max_length=30, null=True, blank=True)
+    email = models.EmailField(unique=True, null=True, blank=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
 class AdminUser(CustomUser):
     # this admin user will contain
     # username, firstname, last name , email, password
+    user_id = models.AutoField(primary_key=True)
     user_role = models.CharField(choices=ROLES_CHOICES, max_length=2)
     full_name = models.CharField(max_length=80, default="")
     phone_number = models.CharField(max_length=20, default="")
-
-    # required in login form
-    USERNAME_FIELD = 'email'
 
     class Meta:
         verbose_name_plural = "Dashboard Users"
@@ -33,12 +36,19 @@ class AppUser(CustomUser):
     # this app user will contain
     # username, firstname, lastname, email, password
 
+    # if user registered
+        # should appear in search
+        # should have a web page
+        # should have qr code
+        # should have profile pic
+
     # visible to other users
-    bio = models.CharField(max_length=80)
+    user_id = models.AutoField(primary_key=True)
+    bio = models.CharField(max_length=80, null=True, blank=True)
     show_bio = models.BooleanField(default=True)
     is_registerd = models.BooleanField(default=False)
     is_certified = models.BooleanField(default=False)
-    image = models.ImageField()
+    image = models.ImageField(null=True, blank=True)
 
     # not visible to others users, used for adver
     age = models.PositiveIntegerField()
@@ -48,12 +58,18 @@ class AppUser(CustomUser):
 
     # for manager and supervisor
     followers = models.PositiveIntegerField(default=0)
-    register_date = models.DateTimeField()
-    last_view_date = models.DateTimeField()
-    last_login_date = models.DateTimeField()
-    ip = models.GenericIPAddressField()
+    register_date = models.DateTimeField(null=True, blank=True)
+    last_view_date = models.DateTimeField(null=True, blank=True)
+    last_login_date = models.DateTimeField(null=True, blank=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
     is_blocked = models.BooleanField(default=False)
-    block_time = models.DateTimeField()
+    block_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return str(self.user_id)
+
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = []
 
     class Meta:
         verbose_name_plural = "App Users"
