@@ -35,20 +35,33 @@ class AdminUser(CustomUser):
 class AppUser(CustomUser):
     # this app user will contain
     # username, firstname, lastname, email, password
-
+    
+    user_id = models.AutoField(primary_key=True)    
+    
     # if user registered
         # should appear in search
         # should have a web page
         # should have qr code
         # should have profile pic
 
+    # authentication using facebook and google
+    user_token = models.CharField(max_length=40, null=True, blank=True)
+
     # visible to other users
-    user_id = models.AutoField(primary_key=True)
+    
+    name_id = models.CharField(unique=True, max_length=40)
     bio = models.CharField(max_length=80, null=True, blank=True)
+    image = models.ImageField(null=True, blank=True)
+    qr_code = models.ImageField(null=True, blank=True)
+    nickname = models.CharField(max_length=30, null=True, blank=True)
+
+    # Bool Fields  
     show_bio = models.BooleanField(default=True)
     is_registerd = models.BooleanField(default=False)
     is_certified = models.BooleanField(default=False)
-    image = models.ImageField(null=True, blank=True)
+    visible_in_search = models.BooleanField(default=True)
+    receive_email = models.BooleanField(default=False)      
+    
 
     # not visible to others users, used for adver
     age = models.PositiveIntegerField()
@@ -56,19 +69,22 @@ class AppUser(CustomUser):
     country = models.CharField(max_length=50)
     state = models.CharField(max_length=50)
 
+
     # for manager and supervisor
     followers = models.PositiveIntegerField(default=0)
+    
     register_date = models.DateTimeField(null=True, blank=True)
     last_view_date = models.DateTimeField(null=True, blank=True)
     last_login_date = models.DateTimeField(null=True, blank=True)
     ip = models.GenericIPAddressField(null=True, blank=True)
+    
     is_blocked = models.BooleanField(default=False)
     block_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return str(self.user_id)
 
-    USERNAME_FIELD = 'username'
+    USERNAME_FIELD = 'name_id'
     REQUIRED_FIELDS = []
 
     class Meta:

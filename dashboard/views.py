@@ -4,7 +4,10 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from users.models import AdminUser # super admin,  admin, manager, supervisor
+from .models import Logging
+
 from .backends import authenticate
+from .utils import serialize_data
 
 import uuid
 
@@ -37,6 +40,13 @@ class LoginAPI(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         token = Token.objects.create(user=user)
+
+        # save action
+        if user.user_role != "SA": 
+            Logging.objects.create(
+                user=user,
+                action="login",
+                )
 
         return Response({
             'name':user.full_name,
@@ -93,6 +103,92 @@ class LogoutAPI(APIView):
         if request.user and request.auth:
             request.user.auth_token.delete()
             request.user.save()
+    
+            # save action
+            if request.user.user_role != "SA":
+                Logging.objects.create(
+                    user=request.user,
+                    action="logout",
+                    )
             return Response({},status=status.HTTP_200_OK)
+        else:
+            return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+
+
+
+
+
+
+
+class LoggingAPI(APIView):
+
+    def get(self, request):
+        if request.user and request.auth:
+            admin_user = AdminUser.objects.filter(email=request.user.email).first()
+            if admin_user:
+                
+                # if the user is super admin ...
+
+                if admin_user.user_role == "SA":
+                    
+                    # will return all logging data
+                    # admins, managers, supervisors
+
+                    admins_logging = serialize_data(Logging.objects.filter(user__user_role='A'))
+                    managers_logging = serialize_data(Logging.objects.filter(user__user_role='M'))
+                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))      
+                    
+                    return Response({
+                        'admins': admins_logging,
+                        'managers': managers_logging,
+                        'supervisors': supervisors_logging,
+                        }, 
+                        status=status.HTTP_200_OK)
+                
+                # if the user is admin ...
+
+                elif admin_user.user_role == "A":
+               
+                    # will return data of managers and supervisors only
+                    managers_logging = serialize_data(Logging.objects.filter(user__user_role='M'))
+                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))      
+                    
+                    return Response({
+                        'managers': managers_logging,
+                        'supervisors': supervisors_logging,
+                        }, 
+                        status=status.HTTP_200_OK)
+
+                # if the user is manager ...
+
+                elif admin_user.user_role == "M":
+                    
+                    # will reutrn data of supervisors only
+                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))      
+                    
+                    return Response({
+                        
+                        'supervisors': supervisors_logging,
+                        }, 
+                        status=status.HTTP_200_OK)
+
+                # if the user is supervisor ... 
+
+                elif admin_user.user_role == 'S':
+
+                    # can not see any logging..
+                    return Response({}, status=status.HTTP_200_OK)
+
+                # if user role is not exist ... 
+                # i think it will not happen ...
+                # but let's handle this ...
+                
+                else:
+                    return Response({}, status=status.HTTP_400_BAD_REQUEST)
+
+        # if user is not authenticated
         else:
             return Response({}, status=status.HTTP_401_UNAUTHORIZED)
