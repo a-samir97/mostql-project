@@ -42,7 +42,7 @@ class LoginAPI(APIView):
         token = Token.objects.create(user=user)
 
         # save action
-        if user.user_role != "SA": 
+        if user.user_role != "SA":
             Logging.objects.create(
                 user=user,
                 action="login",
@@ -100,20 +100,23 @@ class LogoutAPI(APIView):
     Authorization : Token  <token>
     '''
     def post(self,request):
+
         if request.user and request.auth:
+
             request.user.auth_token.delete()
             request.user.save()
-   	   
-   	    admin_user = AdminUser.objects.filter(email=request.user.email).first()
-           
+
+            admin_user = AdminUser.objects.filter(email=request.user.email).first()
+
             if admin_user:
 		    # save action
-		    if admin_user.user_role != "SA":
-		        Logging.objects.create(
-		            user=request.user,
-		            action="logout",
-                    )
+                if admin_user.user_role != "SA":
+                  Logging.objects.create(
+                  user=request.user,
+                  action="logout"
+                  )
             return Response({},status=status.HTTP_200_OK)
+
         else:
             return Response({}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -132,63 +135,63 @@ class LoggingAPI(APIView):
         if request.user and request.auth:
             admin_user = AdminUser.objects.filter(email=request.user.email).first()
             if admin_user:
-                
+
                 # if the user is super admin ...
 
                 if admin_user.user_role == "SA":
-                    
+
                     # will return all logging data
                     # admins, managers, supervisors
 
                     admins_logging = serialize_data(Logging.objects.filter(user__user_role='A'))
                     managers_logging = serialize_data(Logging.objects.filter(user__user_role='M'))
-                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))      
-                    
+                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))
+
                     return Response({
                         'admins': admins_logging,
                         'managers': managers_logging,
                         'supervisors': supervisors_logging,
-                        }, 
+                        },
                         status=status.HTTP_200_OK)
-                
+
                 # if the user is admin ...
 
                 elif admin_user.user_role == "A":
-               
+
                     # will return data of managers and supervisors only
                     managers_logging = serialize_data(Logging.objects.filter(user__user_role='M'))
-                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))      
-                    
+                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))
+
                     return Response({
                         'managers': managers_logging,
                         'supervisors': supervisors_logging,
-                        }, 
+                        },
                         status=status.HTTP_200_OK)
 
                 # if the user is manager ...
 
                 elif admin_user.user_role == "M":
-                    
+
                     # will reutrn data of supervisors only
-                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))      
-                    
+                    supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))
+
                     return Response({
-                        
+
                         'supervisors': supervisors_logging,
-                        }, 
+                        },
                         status=status.HTTP_200_OK)
 
-                # if the user is supervisor ... 
+                # if the user is supervisor ...
 
                 elif admin_user.user_role == 'S':
 
                     # can not see any logging..
                     return Response({}, status=status.HTTP_200_OK)
 
-                # if user role is not exist ... 
+                # if user role is not exist ...
                 # i think it will not happen ...
                 # but let's handle this ...
-                
+
                 else:
                     return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
