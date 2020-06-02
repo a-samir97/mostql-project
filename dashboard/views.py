@@ -103,12 +103,15 @@ class LogoutAPI(APIView):
         if request.user and request.auth:
             request.user.auth_token.delete()
             request.user.save()
-    
-            # save action
-            if request.user.user_role != "SA":
-                Logging.objects.create(
-                    user=request.user,
-                    action="logout",
+   	   
+   	    admin_user = AdminUser.objects.filter(email=request.user.email).first()
+           
+            if admin_user:
+		    # save action
+		    if admin_user.user_role != "SA":
+		        Logging.objects.create(
+		            user=request.user,
+		            action="logout",
                     )
             return Response({},status=status.HTTP_200_OK)
         else:
