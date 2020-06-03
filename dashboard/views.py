@@ -112,7 +112,7 @@ class LogoutAPI(APIView):
 		    # save action
                 if admin_user.user_role != "SA":
                   Logging.objects.create(
-                  user=request.user,
+                  user=admin_user,
                   action="logout"
                   )
             return Response({},status=status.HTTP_200_OK)
