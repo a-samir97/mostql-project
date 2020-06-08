@@ -1,10 +1,12 @@
+from django.db.models import Q
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from users.models import AdminUser # super admin,  admin, manager, supervisor
-from .models import Logging
+from .models import Logging, Note
 
 from .backends import authenticate
 from .utils import serialize_data
@@ -56,7 +58,6 @@ class LoginAPI(APIView):
             'token': token.key
         },
         status=status.HTTP_200_OK)
-
 
 class CreateUser(APIView):
     '''
@@ -120,15 +121,6 @@ class LogoutAPI(APIView):
         else:
             return Response({}, status=status.HTTP_401_UNAUTHORIZED)
 
-
-
-
-
-
-
-
-
-
 class LoggingAPI(APIView):
 
     def get(self, request):
@@ -158,11 +150,13 @@ class LoggingAPI(APIView):
 
                 elif admin_user.user_role == "A":
 
-                    # will return data of managers and supervisors only
+                    # will return data of admins, managers and supervisors only
+                    admins_logging = serialize_data(Logging.objects.filter(user__user_role='A'))      
                     managers_logging = serialize_data(Logging.objects.filter(user__user_role='M'))
                     supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))
 
                     return Response({
+                        'admins': admins_logging,
                         'managers': managers_logging,
                         'supervisors': supervisors_logging,
                         },
@@ -172,11 +166,12 @@ class LoggingAPI(APIView):
 
                 elif admin_user.user_role == "M":
 
-                    # will reutrn data of supervisors only
+                    # will reutrn data of managers, supervisors only
+                    managers_logging = serialize_data(Logging.objects.filter(user__user_role='M'))
                     supervisors_logging = serialize_data(Logging.objects.filter(user__user_role='S'))
 
                     return Response({
-
+                        'managers': managers_logging,
                         'supervisors': supervisors_logging,
                         },
                         status=status.HTTP_200_OK)
@@ -198,3 +193,109 @@ class LoggingAPI(APIView):
         # if user is not authenticated
         else:
             return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+
+class NoteAPI(APIView):
+    
+    def get(self, request):
+
+        all_notes = Note.objects.all()
+        result = []
+        for note in all_notes:
+            result.append({
+                'title': note.title,
+                'description': note.description,
+                'date': note.date,
+                'url': note.url
+            })
+        
+        return Response({
+            'data': result
+        }, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        
+        title = request.data.get('title')
+        description = request.data.get('description')
+        date = request.data.get('date')
+        url = request.data.get('url')
+
+        if title is None or description is None \
+            or date is None:
+
+            return Response({
+                'error': 'please fill all inputs.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        new_note = Note()
+        new_note.title = title
+        new_note.description = description
+        new_note.date = date
+        new_note.url = url
+        new_note.save()
+
+        return Response({}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, id):
+        
+        deleted_note = Note.objects.filter(id=id).first()
+
+        if deleted_note:
+            deleted_note.delete()
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+
+        else:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+# list all users except (super admin)
+class ListUserAPI(APIView):
+    
+    def get(self, request):
+        '''
+        get all admin users except super admin
+
+        '''
+        all_users = AdminUser.objects.all().exclude(Q(user_role='SA')| Q(is_blocked=True))
+
+        json_data = []
+
+        for user in all_users:
+            json_data.append({
+                'id': user.id,
+                'role': user.user_role,
+                'phone': user.phone_number,
+                'name': user.full_name,
+                'email': user.email
+                })
+
+        return Response({'users': json_data}, status=status.HTTP_200_OK)
+
+class DeleteUserAPI(APIView):
+
+    def delete(self, request, user_id):
+        '''
+        delete user by phone
+        '''
+        get_user = AdminUser.objects.filter(id=user_id).first()
+
+        if get_user:
+
+            get_user.delete()
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+
+        else:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+class BlockUserAPI(APIView):
+    def post (self, request, user_id):
+        get_user = AdminUser.objects.filter(id=user_id).first()
+
+        if get_user:
+            get_user.is_blocked = True
+            get_user.save()
+
+            return Response({}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)

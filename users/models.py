@@ -14,7 +14,6 @@ ROLES_CHOICES = (
 )
 
 class CustomUser(AbstractUser):
-    id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=30, null=True, blank=True)
     email = models.EmailField(unique=True, null=True, blank=True)
 
@@ -24,10 +23,10 @@ class CustomUser(AbstractUser):
 class AdminUser(CustomUser):
     # this admin user will contain
     # username, firstname, last name , email, password
-    user_id = models.AutoField(primary_key=True)
     user_role = models.CharField(choices=ROLES_CHOICES, max_length=2)
     full_name = models.CharField(max_length=80, default="")
     phone_number = models.CharField(max_length=20, default="")
+    is_blocked = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Dashboard Users"
@@ -35,8 +34,6 @@ class AdminUser(CustomUser):
 class AppUser(CustomUser):
     # this app user will contain
     # username, firstname, lastname, email, password
-    
-    user_id = models.AutoField(primary_key=True)    
     
     # if user registered
         # should appear in search
