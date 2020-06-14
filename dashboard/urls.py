@@ -20,10 +20,11 @@ urlpatterns = [
 
     # Notes
     path('notes/',views.NoteAPI.as_view(), name='NoteAPI'),
+    path('notes/<int:id>/', views.DeleteNote.as_view(), name='DeleteAPIView'),
 
     # users api (managers management pages)
     path('users/', views.ListUserAPI.as_view(), name='ListUserAPI'),
     path('users/delete/<int:user_id>/', views.DeleteUserAPI.as_view(), name='DeleteUserAPI'),    
-    path('users/block/<int:user_id>/', views.BlockUserAPI.as_view(), name='BlockUserAPI'),
+    path('users/block/<int:user_id>/', views.ToggleBlockUserAPI.as_view(), name='BlockUserAPI'),
 
 ]

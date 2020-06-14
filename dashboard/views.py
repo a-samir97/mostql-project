@@ -213,7 +213,13 @@ class NoteAPI(APIView):
         }, status=status.HTTP_200_OK)
     
     def post(self, request):
-        
+        '''
+        parameters :
+            - title (required)
+            - description (required)
+            - date (required)
+            - url (not required)
+        '''
         title = request.data.get('title')
         description = request.data.get('description')
         date = request.data.get('date')
@@ -235,6 +241,8 @@ class NoteAPI(APIView):
 
         return Response({}, status=status.HTTP_201_CREATED)
 
+class DeleteNote(APIView):
+
     def delete(self, request, id):
         
         deleted_note = Note.objects.filter(id=id).first()
@@ -245,9 +253,6 @@ class NoteAPI(APIView):
 
         else:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
-
-
-
 
 # list all users except (super admin)
 class ListUserAPI(APIView):
@@ -288,14 +293,14 @@ class DeleteUserAPI(APIView):
         else:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-class BlockUserAPI(APIView):
+class ToggleBlockUserAPI(APIView):
     def post (self, request, user_id):
         get_user = AdminUser.objects.filter(id=user_id).first()
 
         if get_user:
-            get_user.is_blocked = True
+            get_user.is_blocked = True if get_user.is_blocked == False else False
             get_user.save()
 
-            return Response({}, status=status.HTTP_201_CREATED)
+            return Response({"blocked": get_user.is_blocked}, status=status.HTTP_201_CREATED)
         else:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
