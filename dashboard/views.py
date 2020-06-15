@@ -273,7 +273,8 @@ class ListUserAPI(APIView):
                 'role': user.user_role,
                 'phone': user.phone_number,
                 'name': user.full_name,
-                'email': user.email
+                'email': user.email,
+                'blocked': user.is_blocked,
                 })
 
         return Response({'users': json_data}, status=status.HTTP_200_OK)
