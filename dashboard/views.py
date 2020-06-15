@@ -202,6 +202,7 @@ class NoteAPI(APIView):
         result = []
         for note in all_notes:
             result.append({
+                'id':note.id,
                 'title': note.title,
                 'description': note.description,
                 'date': note.date,
@@ -262,7 +263,7 @@ class ListUserAPI(APIView):
         get all admin users except super admin
 
         '''
-        all_users = AdminUser.objects.all().exclude(Q(user_role='SA')| Q(is_blocked=True))
+        all_users = AdminUser.objects.all().exclude(Q(user_role='SA'))
 
         json_data = []
 
