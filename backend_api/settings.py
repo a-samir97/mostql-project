@@ -41,10 +41,12 @@ INSTALLED_APPS = [
     # our apps
     'users',
     'dashboard',
+    'application',
 
     # 3rd party
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -150,6 +152,8 @@ STATICFILES_DIRS = (
 )
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 import dj_database_url
 DATABASES['default'] =  dj_database_url.config()
