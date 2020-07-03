@@ -22,4 +22,9 @@ urlpatterns = [
     path('users/delete/<int:user_id>/', views.DeleteUserAPI.as_view(), name='DeleteUserAPI'),    
     path('users/block/<int:user_id>/', views.ToggleBlockUserAPI.as_view(), name='BlockUserAPI'),
 
+    # app users 
+    path('show-user/', views.ShowAppUser.as_view(), name='ShowAppUserAPI'),
+    path('show-blocked-users/', views.ShowBlockedUsers.as_view(), name='ShowBlockedUserAPI'),
+    path('show-inactive-users/', views.ShowInactiveUsers.as_view(), name='ShowInactiveUsersAPI'),
+    path('filter-users/',views.FilterAccount.as_view(),name='FilterAccountsAPI'),
 ]

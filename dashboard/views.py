@@ -1,15 +1,25 @@
 from django.db.models import Q
+from django.utils import timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
-from users.models import AdminUser # super admin,  admin, manager, supervisor
+from users.models import (
+    AdminUser, # super admin,  admin, manager, supervisor,
+    AppUser
+)
+
 from .models import Logging, Note
 
 from .backends import authenticate
 from .utils import serialize_data
+from .serializers import (
+    AppUserSerializer, 
+    ShowBlockedUserSerializer,
+    ShowInactiveUserSerializer
+)
 
 import uuid
 
@@ -296,6 +306,7 @@ class DeleteUserAPI(APIView):
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
 class ToggleBlockUserAPI(APIView):
+
     def post (self, request, user_id):
         get_user = AdminUser.objects.filter(id=user_id).first()
 
@@ -306,3 +317,106 @@ class ToggleBlockUserAPI(APIView):
             return Response({"blocked": get_user.is_blocked}, status=status.HTTP_201_CREATED)
         else:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+# methods for APP Users 
+class ShowAppUser(APIView):
+    def get(self, request):
+        name_id =  request.data.get('name_id')
+        get_user = AppUser.objects.filter(name_id=name_id).first()
+        serializer = AppUserSerializer(get_user)
+        return Response({'data': serializer.data}, status=status.HTTP_200_OK)
+
+class ShowBlockedUsers(APIView):
+    def get(self, request):
+        get_blocked_users = AppUser.objects.filter(is_blocked=True)
+        serializer = ShowBlockedUserSerializer(get_blocked_users, many=True)
+        return Response({'data':serializer.data}, status=status.HTTP_200_OK)
+
+class ShowInactiveUsers(APIView):
+
+    def get(self, request):
+        # not registered users 
+        all_not_registered_users = AppUser.objects.filter(is_registerd=False, is_certified=False)
+        # registered users 
+        all_registered_users = AppUser.objects.filter(is_registerd=True, is_certified=False)
+        # certified users 
+        all_certified_users = AppUser.objects.filter(is_registerd=True, is_certified=True)
+
+        not_registered_users_list = []
+        registered_users_list = []
+        certified_users_list = []
+
+        # looping for unregistered users 
+        for user in all_not_registered_users:
+            
+            if user.last_login_date is None or user.last_view_date is None:
+                continue
+
+            if (timezone.now() - user.last_login_date).days >= 30 and \
+                (timezone.now() - user.last_view_date).days >= 30:
+
+                # append user to the unregistered user list
+                not_registered_users_list.append(user)
+
+        #looping for registered users 
+        for user in all_registered_users:
+            
+            if user.last_login_date is None or user.last_view_date is None:
+                continue
+
+            if (timezone.now() - user.last_login_date).days >= 30 and \
+                (timezone.now() - user.last_view_date).days >= 30:
+
+                # append user to the registered users list 
+                registered_users_list.append(user)
+        
+        # looping for certifed users 
+        for user in all_certified_users:
+            
+            if user.last_login_date is None or user.last_view_date is None:
+                continue
+
+            if (timezone.now() - user.last_login_date).days >= 30 and \
+                (timezone.now() - user.last_view_date).days >= 30:
+
+                # append user to the certfied users list 
+                certified_users_list.append(user)
+
+
+        unregistered_users_serializer = ShowInactiveUserSerializer(not_registered_users_list, many=True)
+        registered_users_serializer = ShowInactiveUserSerializer(registered_users_list, many=True)
+        certified_users_serializer = ShowInactiveUserSerializer(certified_users_list, many=True)
+
+        return Response({
+            'unregistered_users': unregistered_users_serializer.data,
+            'registered_users': registered_users_serializer.data,
+            'certified_users': certified_users_serializer.data
+        }, status=status.HTTP_200_OK)
+
+class FilterAccount(APIView):
+    def get(self, request):
+
+        males_count = AppUser.objects.filter(sex='M').count()
+        females_count = AppUser.objects.filter(sex='F').count()
+        registered_count = AppUser.objects.filter(is_registerd=True, is_certified=False).count()
+        certified_count = AppUser.objects.filter(is_registerd=True, is_certified=True).count()
+        unregistered_count = AppUser.objects.filter(is_registerd=False, is_certified=False).count()
+        all_users_count = AppUser.objects.all().count()
+        range_13_to_21 = AppUser.objects.filter(Q(age__lte=21), Q(age__gte=13)).count()
+        range_21_to_27 = AppUser.objects.filter(Q(age__lte=27), Q(age__gte=21)).count()
+        range_27_to_35 = AppUser.objects.filter(Q(age__lte=35), Q(age__gte=27)).count()
+        range_35_to_50 = AppUser.objects.filter(Q(age__lte=50), Q(age__gte=35)).count()
+        above_50 = AppUser.objects.filter(Q(age__gt=50)).count()
+        return Response({
+            'males_count': males_count,
+            'females_count': females_count,
+            'registered_count': registered_count,
+            'certified_count': certified_count,
+            'unregistered_count': unregistered_count,
+            'all_user_count': all_users_count,
+            'range_13_21': range_13_to_21,
+            'range_21_27': range_21_to_27,
+            'range_27_25': range_27_to_35,
+            'range_35_50': range_35_to_50,
+            'above_50': above_50
+        }, status=status.HTTP_200_OK)
