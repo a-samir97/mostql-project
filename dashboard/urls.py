@@ -27,4 +27,20 @@ urlpatterns = [
     path('show-blocked-users/', views.ShowBlockedUsers.as_view(), name='ShowBlockedUserAPI'),
     path('show-inactive-users/', views.ShowInactiveUsers.as_view(), name='ShowInactiveUsersAPI'),
     path('filter-users/',views.FilterAccount.as_view(),name='FilterAccountsAPI'),
+
+    # Appliaction Management
+    path('ads-info/', views.AdsInfo.as_view(), name='AdsInfoAPI'),
+    path('discount/', views.DiscountValidation.as_view(), name='DiscountValidationAPI'),
+    path('ads-price/', views.AdsPrice.as_view(), name='AdsPriceAPI'),
+    path('inactive-info/', views.InactiveInfo.as_view(), name='InactiveInformationAPI'),
+
+    # Ads Managments
+    path('promocode/', views.PromoCode.as_view(), name='PromoCodeAPI'),
+    path('ads-requests/', views.AdsRequests.as_view(), name='AdsRequestAPI'),
+    path('show-ads/', views.ShowAds.as_view(), name='ShowAdsAPI'),
+
+    # Messages Management
+    path('reports/', views.Reports.as_view(), name='ReportsAPI'),
+    path('inbox/', views.InboxMessages.as_view(), name='InboxMessagesAPI'),
+    path('certified-requests/', views.CertifiedRequest.as_view(), name='CertifiedRequestAPI')
 ]

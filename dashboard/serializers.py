@@ -3,6 +3,8 @@ from users.models import AppUser
 from users.serializers import AccountsSerializer
 import datetime
 
+from .models import InboxMessages, Reports, CertifiedRequest
+
 class AppUserSerializer(serializers.ModelSerializer):
     accounts = AccountsSerializer()
     followers = serializers.SerializerMethodField('get_followers_number')
@@ -38,3 +40,18 @@ class ShowInactiveUserSerializer(serializers.ModelSerializer):
     
     def get_visit_days(self, obj):
         return (datetime.datetime.now().date() - obj.last_view_date.date()).days
+
+class InboxMessagesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InboxMessages
+        fields = '__all__'
+
+class ReportsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reports
+        fields = "__all__"
+
+class CertifiedRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CertifiedRequest
+        fields = "__all__"

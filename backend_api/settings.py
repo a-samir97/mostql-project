@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'users',
     'dashboard',
     'application',
+    'advertisement',
 
     # 3rd party
     'rest_framework',
