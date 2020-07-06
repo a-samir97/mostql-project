@@ -271,6 +271,50 @@ class DeleteNote(APIView):
         else:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
+# get counts 
+class MessagesCount(APIView):
+    def get(self, request):
+        reports_count = Reports.objects.all().count()
+        messages_count = InboxMessages.objects.all().count()
+        certified_count = CertifiedRequest.objects.all().count()
+
+        return Response({
+            'reports_count': reports_count,
+            'messages_count': messages_count,
+            'certified_count': certified_count
+        }, status=status.HTTP_200_OK)
+
+class UserCount(APIView):
+    def get(self, request):
+        
+        males_count = AppUser.objects.filter(sex='M').count()
+        females_count = AppUser.objects.filter(sex='F').count()
+        registered_users_count = AppUser.objects.filter(is_registerd=True).count()
+        unregistered_users_count = AppUser.objects.filter(is_registerd=False).count()
+        all_users_count = AppUser.objects.all().count()
+
+        return Response({
+            'males_count': males_count,
+            'females_count': females_count,
+            'registered_count': registered_users_count,
+            'unregistered_count': unregistered_users_count,
+            'all_users_count': all_users_count
+        }, status=status.HTTP_200_OK)
+
+class AdminSystem(APIView):
+    def get(self, request):
+        all_logging = Logging.objects.all().count()
+        all_ads_info = AdsInformation.objects.first()
+        if all_ads_info:
+            return Response({
+                'all_logging': all_logging,
+                'gps': all_ads_info.gps,
+                'show_ads': all_ads_info.show_homepage and all_ads_info.show_settings and all_ads_info.show_profile,
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': 'there is no ads information, create a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+
 # list all users except (super admin)
 class ListUserAPI(APIView):
     
@@ -527,11 +571,11 @@ class DiscountValidation(APIView):
     def post(self, request):
         discount = Discount.objects.first()
         if discount:
-            discount.manager_percentage=request.data.get('manager_percentage') if request.data.get('manager_percentage') else discount.manager_percentage,
+            discount.manager_percentage=request.data.get('manager_percentage') if request.data.get('manager_percentage') else discount.manager_percentage
 
-            discount.manager_days=request.data.get('manager_days') if request.data.get('manager_days') else discount.manager_days,
+            discount.manager_days=request.data.get('manager_days') if request.data.get('manager_days') else discount.manager_days
             
-            discount.supervisor_percentage=request.data.get('supervisor_percentage') if request.data.get('supervisor_percentage') else discount.supervisor_percentage,
+            discount.supervisor_percentage=request.data.get('supervisor_percentage') if request.data.get('supervisor_percentage') else discount.supervisor_percentage
 
             discount.supervisor_days=request.data.get('supervisor_days') if request.data.get('supervisor_days') else discount.supervisor_days
 
@@ -581,18 +625,35 @@ class AdsPrice(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
     
     def post(self, request):
-        ads_pricing = AdvertisingPricing.objects.create(
-            show_number_of_days=request.data.get('days'),
-            days_price=request.data.get('days_price'),
-            show_number_of_appearing=request.data.get('appearing'),
-            appearing_price=request.data.get('appearing_price')
-        )
-        return Response({
-            'days': ads_pricing.show_number_of_days,
-            'days_price': ads_pricing.days_price,
-            'appearing': ads_pricing.show_number_of_appearing,
-            'appearing_price':ads_pricing.appearing_price   
-        }, status=status.HTTP_201_CREATED)
+        ads_pricing = AdvertisingPricing.objects.first()
+        if ads_pricing:
+
+            ads_pricing.show_number_of_days=request.data.get('days') if request.data.get('days') else ads_pricing.show_number_of_days 
+            ads_pricing.days_price=request.data.get('days_price') if request.data.get('days_price') else ads_pricing.days_price 
+            ads_pricing.show_number_of_appearing=request.data.get('appearing') if request.data.get('appearing') else ads_pricing.show_number_of_appearing
+            ads_pricing.appearing_price=request.data.get('appearing_price') if request.data.get('appearing_price') else ads_pricing.appearing_price
+            ads_pricing.save()
+
+            return Response({
+                'days': ads_pricing.show_number_of_days,
+                'days_price': ads_pricing.days_price,
+                'appearing': ads_pricing.show_number_of_appearing,
+                'appearing_price':ads_pricing.appearing_price   
+            }, status=status.HTTP_200_OK)
+
+        else:
+            ads_pricing = AdvertisingPricing.objects.create(
+                show_number_of_days=request.data.get('days'),
+                days_price=request.data.get('days_price'),
+                show_number_of_appearing=request.data.get('appearing'),
+                appearing_price=request.data.get('appearing_price')
+            )
+            return Response({
+                'days': ads_pricing.show_number_of_days,
+                'days_price': ads_pricing.days_price,
+                'appearing': ads_pricing.show_number_of_appearing,
+                'appearing_price':ads_pricing.appearing_price   
+            }, status=status.HTTP_201_CREATED)
 
 class InactiveInfo(APIView):
     '''
@@ -621,22 +682,42 @@ class InactiveInfo(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
-        inactive_info = InactiveInformation.objects.create(
-            unregistered_last_login=request.data.get('unreg_last_login'),
-            unregistered_last_view=request.data.get('unreg_last_view'),
-            registered_last_login=request.data.get('reg_last_login'),
-            registered_last_view=request.data.get('reg_last_view'),
-            certified_last_login=request.data.get('cer_last_login'),
-            certified_last_view=request.data.get('cer_last_view')
-        )
-        return Response({
-            'unreg_last_login':inactive_info.unregistered_last_login,
-            'unreg_last_view': inactive_info.unregistered_last_view,
-            'reg_last_login': inactive_info.registered_last_login,
-            'reg_last_view': inactive_info.registered_last_view,
-            'cer_last_login':inactive_info.certified_last_login,
-            'cer_last_view': inactive_info.certified_last_view
-        }, status=status.HTTP_201_CREATED)
+        inactive_info = InactiveInformation.objects.first()
+        if inactive_info:
+            inactive_info.unregistered_last_login=request.data.get('unreg_last_login') if request.data.get('unreg_last_login') else inactive_info.unregistered_last_login 
+            inactive_info.unregistered_last_view=request.data.get('unreg_last_view') if request.data.get('unreg_last_view') else inactive_info.unregistered_last_view 
+            inactive_info.registered_last_login=request.data.get('reg_last_login') if request.data.get('reg_last_login') else inactive_info.registered_last_login  
+            inactive_info.registered_last_view=request.data.get('reg_last_view') if request.data.get('reg_last_view') else inactive_info.registered_last_view
+            inactive_info.certified_last_login=request.data.get('cer_last_login') if request.data.get('cer_last_login') else inactive_info.certified_last_login
+            inactive_info.certified_last_view=request.data.get('cer_last_view') if request.data.get('cer_last_view') else inactive_info.certified_last_view
+
+            inactive_info.save()
+            return Response({
+                'unreg_last_login':inactive_info.unregistered_last_login,
+                'unreg_last_view': inactive_info.unregistered_last_view,
+                'reg_last_login': inactive_info.registered_last_login,
+                'reg_last_view': inactive_info.registered_last_view,
+                'cer_last_login':inactive_info.certified_last_login,
+                'cer_last_view': inactive_info.certified_last_view
+            }, status=status.HTTP_200_OK)
+
+        else:
+            inactive_info = InactiveInformation.objects.create(
+                unregistered_last_login=request.data.get('unreg_last_login'),
+                unregistered_last_view=request.data.get('unreg_last_view'),
+                registered_last_login=request.data.get('reg_last_login'),
+                registered_last_view=request.data.get('reg_last_view'),
+                certified_last_login=request.data.get('cer_last_login'),
+                certified_last_view=request.data.get('cer_last_view')
+            )
+            return Response({
+                'unreg_last_login':inactive_info.unregistered_last_login,
+                'unreg_last_view': inactive_info.unregistered_last_view,
+                'reg_last_login': inactive_info.registered_last_login,
+                'reg_last_view': inactive_info.registered_last_view,
+                'cer_last_login':inactive_info.certified_last_login,
+                'cer_last_view': inactive_info.certified_last_view
+            }, status=status.HTTP_201_CREATED)
 
 class SendNotificationToAllUser(APIView):
     def post(self, request):
@@ -684,7 +765,7 @@ class ShowAds(APIView):
 
 ## Messages Management 
 
-class Reports(APIView):
+class ReportsAPI(APIView):
     def get(self, request):
         all_reports = Reports.objects.all()
         serializer = ReportSerializer(all_reports, many=True)
@@ -693,7 +774,7 @@ class Reports(APIView):
     def post(self, request):
         pass
 
-class InboxMessages(APIView):
+class InboxMessagesAPI(APIView):
     def get(self, request):
         all_inbox = InboxMessages.objects.all()
         serializer = InboxMessagesSerializer(all_inbox, many=True)
@@ -702,7 +783,7 @@ class InboxMessages(APIView):
     def post(self, request):
         pass
 
-class CertifiedRequest(APIView):
+class CertifiedRequestAPI(APIView):
     def get(self, request):
         all_certified_request = CertifiedRequest.objects.all()
         serializer = CertifiedRequestSerializer(all_certified_request, many=True)

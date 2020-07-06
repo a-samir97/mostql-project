@@ -7,10 +7,14 @@ from rest_framework.authtoken.models import Token
 from datetime import datetime
 from django.utils import timezone
 
+from dashboard.models import CertifiedRequest, InboxMessages, Reports
+
 from users.models import AppUser
-from .models import UserStatus, Status
 from users.serializers import UserSerializer, UserShowSerializer, UnregisteredUserSerializer
+
+from .models import UserStatus, Status, UserIP, LoginDates, VisitDates
 from .utils import get_ip
+
 
 class ListAllUserAPI(APIView):
 	'''
@@ -135,13 +139,19 @@ class RegisteredLoginAPI(APIView):
 
 			# ip login today 
 			current_user.ip_sign_in_today = get_ip(request)
-
+		
 			# last date for login 
 			current_user.last_login_date = timezone.now()
 
 			# save the object 
 			current_user.save()
 
+			# save ip of the user in the userIp model
+			new_user_ip_object, _ = UserIP.objects.get_or_create(user=current_user, ip=current_user.ip_sign_in_today)
+
+			# save login date of the user in logindates model 
+			new_login_date_object, _ = LoginDates.objects.get_or_create(user=current_user, date=current_user.last_login_date)
+			
 			try:
 				# delete the token of the current user 
 				current_user.auth_token.delete()
@@ -184,9 +194,15 @@ class RegisteredLoginAPI(APIView):
 
 				# is_registered to True
 				new_user.is_registerd = True
-
+				
 				# save after edit first ip
 				new_user.save()
+
+				# save ip of the user in the userIp model
+				new_user_ip_object, _ = UserIP.objects.get_or_create(user=new_user, ip=new_user.first_ip)
+
+				# save login date of the user in logindates model 
+				new_login_date_object, _ = LoginDates.objects.get_or_create(user=new_user, date=new_user.last_login_date)
 
 				# generate a new token 
 				token = Token.objects.create(user=new_user)
@@ -333,6 +349,10 @@ class ViewAccountAPI(APIView):
 		
 		if get_viewed_user:
 			get_viewed_user.last_view_date = timezone.now()
+			
+			# save last visit dates 
+			last_visit_date_object, _ = VisitDates.objects.get_or_create(user=get_viewed_user, date=timezone.now())
+
 			get_viewed_user.save()
 			return Response({}, status=status.HTTP_200_OK)
 		else:
@@ -633,3 +653,61 @@ class GetWaitingListAPI(APIView):
 		# return Ok Response 
 		return Response({'data': serializer.data}, status=status.HTTP_200_OK)
 
+class CertifiedRequestAPI(APIView):
+	def post(self, request):
+		user = AppUser.objects.filter(id=request.user.id).first()
+		if user:
+			certified_request = CertifiedRequest.objects.filter(user=user).first()
+			if certified_request:
+				# user has asked for certification before 
+				return Response(
+					{'data': 'you have asked for certification before'}, 
+				status=status.HTTP_400_BAD_REQUEST)
+			else:
+				certified_request = CertifiedRequest.objects.create(
+					user=user,
+					reason=request.data.get('reason'),
+					proof=request.data.get('proof'),
+				)
+				return Response({
+					'username': user.name_id,
+					'reason': certified_request.reason,
+					'proof': certified_request.proof
+				}, status=status.HTTP_201_CREATED)
+		else:
+			return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+
+class CreateReport(APIView):
+	def post(self, request):
+		user = AppUser.objects.filter(id=request.user.id).first()
+		if user:
+			# creating report 
+			new_report = Reports.objects.create(
+				user=user,
+				report_reason=request.data.get('reason'),
+				notes=request.data.get('notes')
+			) 
+			return Response({
+				'name_id': user.name_id,
+				'reason': new_report.report_reason,
+				'notes': new_report.notes
+			}, status=status.HTTP_201_CREATED)
+			
+		else:
+			return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+
+class CreateMessage(APIView):
+	def post(self, request):
+		user = AppUser.objects.filter(id=request.user.id).first()
+		if user:
+			# create a new message 
+			new_message = InboxMessages.objects.create(
+				user=user,
+				message=request.data.get('message'),
+			)
+			return Response({
+				'name_id': user.name_id,
+				'message': new_message.message
+			}, status=status.HTTP_201_CREATED)
+		else:
+			return Response({}, status=status.HTTP_401_UNAUTHORIZED)

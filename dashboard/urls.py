@@ -4,6 +4,10 @@ from . import views
 
 urlpatterns = [
     # URLS
+    # Homepage Counts 
+    path('messages-counts/', views.MessagesCount.as_view(), name='MessagesCountAPI'),
+    path('user-counts/', views.UserCount.as_view(), name='UserCountAPI'),
+    path('system-info/', views.AdminSystem.as_view(), name='AdminSystemAPI'),
 
     # Authentication (login, create user, logout)
     path('login/', views.LoginAPI.as_view(), name='LoginAPI'),
@@ -40,7 +44,7 @@ urlpatterns = [
     path('show-ads/', views.ShowAds.as_view(), name='ShowAdsAPI'),
 
     # Messages Management
-    path('reports/', views.Reports.as_view(), name='ReportsAPI'),
-    path('inbox/', views.InboxMessages.as_view(), name='InboxMessagesAPI'),
-    path('certified-requests/', views.CertifiedRequest.as_view(), name='CertifiedRequestAPI')
+    path('reports/', views.ReportsAPI.as_view(), name='ReportsAPI'),
+    path('inbox/', views.InboxMessagesAPI.as_view(), name='InboxMessagesAPI'),
+    path('certified-requests/', views.CertifiedRequestAPI.as_view(), name='CertifiedRequestAPI')
 ]
