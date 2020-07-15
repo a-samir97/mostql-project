@@ -16,6 +16,7 @@ Pillow==7.1.2
 psycopg2==2.8.5
 pyparsing==2.4.7
 pytz==2020.1
+qrcode==6.1
 requests==2.23.0
 ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0

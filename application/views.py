@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 
 from datetime import datetime
 from django.utils import timezone
+from django.core.files import File
 
 from dashboard.models import CertifiedRequest, InboxMessages, Reports
 
@@ -15,6 +16,8 @@ from users.serializers import UserSerializer, UserShowSerializer, UnregisteredUs
 from .models import UserStatus, Status, UserIP, LoginDates, VisitDates
 from .utils import get_ip
 
+import qrcode
+from io import BytesIO
 
 class ListAllUserAPI(APIView):
 	'''
@@ -118,7 +121,7 @@ class RegisteredLoginAPI(APIView):
 		# if there is no token from google or facebook 
 		if not request.data.get('user_token'):
 			# return bad request 
-			return Response({}, status=status.HTTP_400_BAD_REQUEST)
+			return Response({'error':'there is no token'}, status=status.HTTP_400_BAD_REQUEST)
 		
 		# check if the user has token
 		if request.user and request.auth:
@@ -194,6 +197,14 @@ class RegisteredLoginAPI(APIView):
 
 				# is_registered to True
 				new_user.is_registerd = True
+				
+				# save qrcode of the user 
+				img = qrcode.make(new_user.name_id)
+				blob = BytesIO()
+				img.save(blob, 'JPEG')  
+				
+#				new_user.qr_code = img
+				new_user.qr_code.save('{}_qrcode.jpg'.format(new_user.name_id), File(blob), save=False)
 				
 				# save after edit first ip
 				new_user.save()
